@@ -6,7 +6,7 @@
   provider-name="Mikael Finstad">
   <extension
     point="xbmc.player.musicviz"
-    library_linux="vsxu.vis"
+    library_linux="visualization.vsxu.so"
     library_wingl="vsxu_win32.vis"
     library_osx="vsxu.vis"/>
   <extension point="xbmc.addon.metadata">
