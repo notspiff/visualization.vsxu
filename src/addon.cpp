@@ -2,8 +2,8 @@
 #define __cdecl
 #endif
 
-#include "xbmc/xbmc_vis_types.h"
-#include "xbmc/xbmc_vis_dll.h"
+#include "kodi/xbmc_vis_types.h"
+#include "kodi/xbmc_vis_dll.h"
 
 #include <vsx_version.h>
 #include <vsx_platform.h>
