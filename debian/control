@@ -1,0 +1,23 @@
+Source: kodi-visualization-vsxu
+Priority: extra
+Maintainer: Arne Morten Kvarving <cptspiff@gmail.com>
+Build-Depends: debhelper (>= 8.0.0), cmake, kodi-addon-dev,
+               kodi-visualization-dev, libgl1-mesa-dev, libvsxu-dev
+Standards-Version: 3.9.2
+Section: libs
+Homepage: http://kodi.tv
+
+Package: kodi-visualization-vsxu
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, vsxu-data
+Description: VSXu visualizer for Kodi 
+ VSXu visualizer for XBMC
+
+Package: kodi-visualization-vsxu-dbg
+Section: debug
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, vsxu-data
+Description: debug symbols for VSXu visualizer for Kodi
+ debug symbols for VSXu visualizer for Kodi
+
