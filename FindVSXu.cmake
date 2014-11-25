@@ -7,7 +7,7 @@
 
 find_package(PkgConfig)
 if(PKG_CONFIG_FOUND)
-  pkg_check_modules (VSXU libvsxu)
+  pkg_check_modules (VSXU libvsxu>=0.5.0)
 endif()
 
 include(FindPackageHandleStandardArgs)
