@@ -27,9 +27,7 @@
 // https://github.com/vovoid/vsxu/blob/master/engine_audiovisual/src/vsx_manager.cpp
 // https://github.com/vovoid/vsxu/blob/master/engine_audiovisual/src/vsx_statelist.h
 
-vsx_gl_state gl_state;
 vsx_manager_abs* manager = NULL;
-bool initialized = false;
 
 bool warnGiven = false;
 
@@ -43,23 +41,22 @@ extern "C" ADDON_STATUS ADDON_Create (void* hdl, void* props)
   if (!props)
     return ADDON_STATUS_UNKNOWN;
 
-  //VIS_PROPS* visProps = (VIS_PROPS*) props;
+  VIS_PROPS* visProps = (VIS_PROPS*) props;
 
-  if (!initialized) {
-    initialized = true;
-    // create a new manager
-    manager = manager_factory();
-    manager->set_option_preload_all(false);
+  // create a new manager
+  manager = manager_factory();
+  manager->set_option_preload_all(false);
 
-    manager->init("/usr/share/vsxu", "media_player"); // TODO setting for vis path
-    g_presets = manager->get_visual_filenames();
-    // strip off dir names - if there are duped presets this will misbehave.
-    for (size_t i=0;i<g_presets.size();++i) {
-      size_t sit = g_presets[i].rfind('/');
-      size_t dit = g_presets[i].rfind('.');
-      g_presets[i] = g_presets[i].substr(sit+1,dit-sit-1);
-    }
+  manager->init("/usr/share/vsxu", "media_player"); // TODO setting for vis path
+  g_presets = manager->get_visual_filenames();
+  // strip off dir names - if there are duped presets this will misbehave.
+  for (size_t i=0;i<g_presets.size();++i) {
+    size_t sit = g_presets[i].rfind('/');
+    size_t dit = g_presets[i].rfind('.');
+    g_presets[i] = g_presets[i].substr(sit+1,dit-sit-1);
   }
+
+  vsx_gl_state::get_instance()->viewport_set(0,0,visProps->width,visProps->height);
 
   return ADDON_STATUS_NEED_SETTINGS;
 }
@@ -86,8 +83,8 @@ extern "C" void AudioData (const float *pAudioData, int iAudioDataLength, float 
     return;
   }
 
-  memcpy(audio_data, pAudioData, iAudioDataLength*sizeof(float));
-  memcpy(audio_data_freq, pFreqData, iFreqDataLength*sizeof(float));
+  manager->set_sound_wave(const_cast<float*>(pAudioData));
+  manager->set_sound_freq(const_cast<float*>(pFreqData));
 }
 
 extern "C" void Render()
@@ -100,11 +97,10 @@ extern "C" void Render()
     {
     audio_data_freq[i] = (float)(rand()%65535)*(1.0f/65535.0f);
     }
+
     manager->set_sound_freq(&audio_data[0]);
     manager->set_sound_wave(&audio_data_freq[0]);*/
 
-  manager->set_sound_wave(audio_data);
-  manager->set_sound_freq(audio_data_freq);
 
   manager->render();
 }
@@ -195,15 +191,12 @@ extern "C" void ADDON_Destroy()
   // Actually, it isn't slow, but calling Render takes very long the first time
 
   // stop vsxu nicely (unloads textures and frees memory)
-  //if (manager) manager->stop();
+  if (manager) manager->stop();
 
   // call manager factory to destruct our manager object
-  //if (manager) manager_destroy(manager);
+  if (manager) manager_destroy(manager);
 
-  //manager = NULL;
-  //initialized = false;
-
-  return;
+  manager = NULL;
 }
 
 extern "C" bool ADDON_HasSettings()
