@@ -31,9 +31,6 @@ vsx_manager_abs* manager = NULL;
 
 bool warnGiven = false;
 
-float audio_data[513];
-float audio_data_freq[513];
-
 std::vector<std::string> g_presets;
 
 extern "C" ADDON_STATUS ADDON_Create (void* hdl, void* props)
@@ -89,19 +86,6 @@ extern "C" void AudioData (const float *pAudioData, int iAudioDataLength, float 
 
 extern "C" void Render()
 {
-/*  for (unsigned long i = 0; i < 512; i++)
-    {
-    audio_data[i] = (float)(rand()%65535-32768)*(1.0f/32768.0f);
-    }
-    for (unsigned long i = 0; i < 512; i++)
-    {
-    audio_data_freq[i] = (float)(rand()%65535)*(1.0f/65535.0f);
-    }
-
-    manager->set_sound_freq(&audio_data[0]);
-    manager->set_sound_wave(&audio_data_freq[0]);*/
-
-
   manager->render();
 }
 
@@ -187,9 +171,6 @@ extern "C" void ADDON_Stop()
 
 extern "C" void ADDON_Destroy()
 {
-  // It is so slow to start up each time, and destroy happens very often, so don't unload
-  // Actually, it isn't slow, but calling Render takes very long the first time
-
   // stop vsxu nicely (unloads textures and frees memory)
   if (manager) manager->stop();
 
@@ -206,8 +187,6 @@ extern "C" bool ADDON_HasSettings()
 
 extern "C" ADDON_STATUS ADDON_GetStatus()
 {
-  //    return ADDON_STATUS_UNKNOWN;
-
   return ADDON_STATUS_OK;
 }
 
