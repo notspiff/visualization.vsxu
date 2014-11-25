@@ -4,6 +4,7 @@
 
 #include "kodi/xbmc_vis_types.h"
 #include "kodi/xbmc_vis_dll.h"
+#include "kodi/libXBMC_addon.h"
 
 #include <vsx_version.h>
 #include <vsx_platform.h>
@@ -22,14 +23,13 @@
 #include <sstream>
 #include <sys/stat.h>
 
+ADDON::CHelper_libXBMC_addon *XBMC           = NULL;
 
 // TODO: configure setting.
 // https://github.com/vovoid/vsxu/blob/master/engine_audiovisual/src/vsx_manager.cpp
 // https://github.com/vovoid/vsxu/blob/master/engine_audiovisual/src/vsx_statelist.h
 
 vsx_manager_abs* manager = NULL;
-
-bool warnGiven = false;
 
 std::vector<std::string> g_presets;
 
@@ -40,11 +40,25 @@ extern "C" ADDON_STATUS ADDON_Create (void* hdl, void* props)
 
   VIS_PROPS* visProps = (VIS_PROPS*) props;
 
+  if (!XBMC)
+    XBMC = new ADDON::CHelper_libXBMC_addon;
+
+  if (!XBMC->RegisterMe(hdl))
+  {
+    delete XBMC, XBMC=NULL;
+    return ADDON_STATUS_PERMANENT_FAILURE;
+  }
+
+  char path[1024];
+  XBMC->GetSetting("__addonpath__", path);
+  strcat(path,"/resources");
+
   // create a new manager
   manager = manager_factory();
   manager->set_option_preload_all(false);
 
-  manager->init("/usr/share/vsxu", "media_player"); // TODO setting for vis path
+  manager->init("/usr/share/vsxu", "media_player");
+  manager->add_visual_path(path);
   g_presets = manager->get_visual_filenames();
   // strip off dir names - if there are duped presets this will misbehave.
   for (size_t i=0;i<g_presets.size();++i) {
@@ -64,22 +78,6 @@ extern "C" void Start (int, int, int, const char*)
 
 extern "C" void AudioData (const float *pAudioData, int iAudioDataLength, float *pFreqData, int iFreqDataLength)
 {
-  if ((unsigned int)iAudioDataLength > sizeof(audio_data)/sizeof(*audio_data)-1) {
-    if (!warnGiven) {
-      fprintf(stderr, "Unexpected audio data length received (%d), expect incorrect vis\n", iAudioDataLength);
-      warnGiven = true;
-    }
-    return;
-  }
-
-  if ((unsigned int)iFreqDataLength > sizeof(audio_data_freq)/sizeof(*audio_data_freq)-1) {
-    if (!warnGiven) {
-      fprintf(stderr, "Unexpected freq data length received (%d), expect incorrect vis\n", iAudioDataLength);
-      warnGiven = true;
-    }
-    return;
-  }
-
   manager->set_sound_wave(const_cast<float*>(pAudioData));
   manager->set_sound_freq(const_cast<float*>(pFreqData));
 }
@@ -149,7 +147,7 @@ extern "C" unsigned GetPreset()
 
   std::vector<std::string>::const_iterator it = std::find_if(g_presets.begin(),
                                                              g_presets.end(),
-                                                             FindSubString(current));
+                                                             FindSubString(current+".vsx"));
 
   return it-g_presets.begin();
 }
