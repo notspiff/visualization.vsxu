@@ -2,9 +2,9 @@
 #define __cdecl
 #endif
 
-#include "kodi/xbmc_vis_types.h"
-#include "kodi/xbmc_vis_dll.h"
-#include "kodi/libXBMC_addon.h"
+#include "xbmc_vis_types.h"
+#include "xbmc_vis_dll.h"
+#include "libXBMC_addon.h"
 
 #include <vsx_version.h>
 #include <vsx_platform.h>
@@ -54,26 +54,19 @@ extern "C" ADDON_STATUS ADDON_Create (void* hdl, void* props)
   strcat(path,"/resources");
 
   // create a new manager
-  manager = manager_factory();
-  manager->set_option_preload_all(false);
+  if (!manager) {
+    manager = manager_factory();
+    manager->set_option_preload_all(false);
 
-  manager->init("/usr/share/vsxu", "media_player");
-  manager->add_visual_path(path);
-  g_presets = manager->get_visual_filenames();
-  // strip off dir names - if there are duped presets this will misbehave.
-  for (size_t i=0;i<g_presets.size();++i) {
-    size_t sit = g_presets[i].rfind('/');
-    size_t dit = g_presets[i].rfind('.');
-    g_presets[i] = g_presets[i].substr(sit+1,dit-sit-1);
+    manager->init(path, "media_player");
   }
-
-  vsx_gl_state::get_instance()->viewport_set(0,0,visProps->width,visProps->height);
 
   return ADDON_STATUS_NEED_SETTINGS;
 }
 
-extern "C" void Start (int, int, int, const char*)
+extern "C" void Start (int x, int y, int w, int h, void*, float, int, int, int, const char*)
 {
+  vsx_gl_state::get_instance()->viewport_set(x,y,w,h);
 }
 
 extern "C" void AudioData (const float *pAudioData, int iAudioDataLength, float *pFreqData, int iFreqDataLength)
@@ -121,6 +114,16 @@ extern "C" bool OnAction (long flags, const void *param)
 
 extern "C" unsigned int GetPresets (char ***presets)
 {
+  if (g_presets.empty())
+  {
+    g_presets = manager->get_visual_filenames();
+    // strip off dir names - if there are duped presets this will misbehave.
+    for (size_t i=0;i<g_presets.size();++i) {
+      size_t sit = g_presets[i].rfind('/');
+      size_t dit = g_presets[i].rfind('.');
+      g_presets[i] = g_presets[i].substr(sit+1,dit-sit-1);
+    }
+  }
   if (g_presets.size() > 0) {
     *presets = new char*[g_presets.size()];
     for (size_t i=0;i<g_presets.size();++i)
@@ -164,16 +167,16 @@ extern "C" unsigned int GetSubModules (char ***names)
 
 extern "C" void ADDON_Stop()
 {
-  return;
 }
 
 extern "C" void ADDON_Destroy()
 {
-  // stop vsxu nicely (unloads textures and frees memory)
-  if (manager) manager->stop();
-
   // call manager factory to destruct our manager object
-  if (manager) manager_destroy(manager);
+  if (manager) {
+    // stop vsxu nicely (unloads textures and frees memory)
+    manager->stop();
+    manager_destroy(manager);
+  }
 
   manager = NULL;
 }
