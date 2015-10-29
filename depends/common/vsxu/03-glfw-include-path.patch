@@ -1,0 +1,50 @@
+--- vsxu/widget/CMakeLists.txt.orig	2015-10-29 15:38:06.480840769 +0100
++++ vsxu/widget/CMakeLists.txt	2015-10-29 15:38:19.298428339 +0100
+@@ -19,6 +19,7 @@
+ 
+ include_directories(
+   ${GLEW_INCLUDE_PATH}
++  ${GLFW_INCLUDE_PATH}
+   ../
+   ../engine/include
+   ../engine_graphics/include
+--- vsxu/artiste/CMakeLists.txt.orig	2015-10-29 15:39:33.733189732 +0100
++++ vsxu/artiste/CMakeLists.txt	2015-10-29 15:39:43.260423452 +0100
+@@ -24,6 +24,7 @@
+ include_directories(
+   ${OPENGL_INCLUDE_DIR}
+   ${GLEW_INCLUDE_PATH}
++  ${GLFW_INCLUDE_PATH}
+   ${CMAKE_SOURCE_DIR}/
+   ${CMAKE_SOURCE_DIR}/engine/include
+   ${CMAKE_SOURCE_DIR}/engine_graphics/include
+--- vsxu/player/CMakeLists.txt.org	2015-10-29 15:53:28.357645410 +0100
++++ vsxu/player/CMakeLists.txt	2015-10-29 15:53:38.209645075 +0100
+@@ -22,6 +22,7 @@
+ include_directories(
+   ${OPENGL_INCLUDE_DIR}
+   ${GLEW_INCLUDE_PATH}
++  ${GLFW_INCLUDE_PATH}
+   ${CMAKE_SOURCE_DIR}/
+   ${CMAKE_SOURCE_DIR}/engine/include
+   ${CMAKE_SOURCE_DIR}/profiler/include
+--- vsxu/profiler/CMakeLists.txt.orig	2015-10-29 15:54:44.897642807 +0100
++++ vsxu/profiler/CMakeLists.txt	2015-10-29 15:54:56.201642422 +0100
+@@ -24,6 +24,7 @@
+ include_directories(
+   ${OPENGL_INCLUDE_DIR}
+   ${GLEW_INCLUDE_PATH}
++  ${GLFW_INCLUDE_PATH}
+   ${CMAKE_SOURCE_DIR}/
+   ${CMAKE_SOURCE_DIR}/engine/include
+   ${CMAKE_SOURCE_DIR}/engine_graphics/include
+--- vsxu/server/CMakeLists.txt.orig	2015-10-29 15:55:56.525640371 +0100
++++ vsxu/server/CMakeLists.txt	2015-10-29 15:56:05.685640059 +0100
+@@ -21,6 +21,7 @@
+ ################################################################################
+ 
+ include_directories(
++  ${GLFW_INCLUDE_PATH}
+   ../
+   ../engine/include
+   ../engine_graphics/include

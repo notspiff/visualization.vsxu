@@ -1,0 +1,1 @@
+vsxu https://github.com/vovoid/vsxu/archive/0.5.1.tar.gz
