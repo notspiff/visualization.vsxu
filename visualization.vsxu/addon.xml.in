@@ -6,12 +6,10 @@
   provider-name="Mikael Finstad">
   <extension
     point="xbmc.player.musicviz"
-    library_linux="visualization.vsxu.so"
-    library_wingl="vsxu_win32.vis"
-    library_osx="vsxu.vis"/>
+    library_@PLATFORM@="@LIBRARY_FILENAME@"/>
   <extension point="xbmc.addon.metadata">
     <summary lang="en">VSXu</summary>
     <description lang="en">Plugin for the VSXu library</description>
-    <platform>linux osx wingl</platform>
+    <platform>@PLATFORM@</platform>
   </extension>
 </addon>
