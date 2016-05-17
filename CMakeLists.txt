@@ -4,7 +4,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.1) # To get proper pkg-config behavior
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR})
 
-find_package(kodi REQUIRED)
+find_package(Kodi REQUIRED)
 find_package(VSXu REQUIRED)
 find_package(GLEW REQUIRED)
 
