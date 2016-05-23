@@ -1,17 +1,15 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <addon
   id="visualization.vsxu"
-  version="1.0.0"
+  version="1.1.0"
   name="VSXU"
   provider-name="Mikael Finstad">
   <extension
     point="xbmc.player.musicviz"
-    library_linux="visualization.vsxu.so"
-    library_wingl="vsxu_win32.vis"
-    library_osx="vsxu.vis"/>
+    library_@PLATFORM@="@LIBRARY_FILENAME@"/>
   <extension point="xbmc.addon.metadata">
     <summary lang="en">VSXu</summary>
     <description lang="en">Plugin for the VSXu library</description>
-    <platform>linux osx wingl</platform>
+    <platform>@PLATFORM@</platform>
   </extension>
 </addon>
