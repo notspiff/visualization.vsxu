@@ -2,9 +2,7 @@
 #define __cdecl
 #endif
 
-#include "xbmc_vis_types.h"
-#include "xbmc_vis_dll.h"
-#include "libXBMC_addon.h"
+#include <kodi/addon-instance/Visualization.h>
 
 #include <vsx_version.h>
 #include <vsx_platform.h>
@@ -23,185 +21,115 @@
 #include <sstream>
 #include <sys/stat.h>
 
-ADDON::CHelper_libXBMC_addon *XBMC           = NULL;
-
-// TODO: configure setting.
-// https://github.com/vovoid/vsxu/blob/master/engine_audiovisual/src/vsx_manager.cpp
-// https://github.com/vovoid/vsxu/blob/master/engine_audiovisual/src/vsx_statelist.h
-
-vsx_manager_abs* manager = NULL;
-
-std::vector<std::string> g_presets;
-
-extern "C" ADDON_STATUS ADDON_Create (void* hdl, void* props)
+class CVisualizationVSXU
+  : public kodi::addon::CAddonBase,
+    public kodi::addon::CInstanceVisualization
 {
-  if (!props)
-    return ADDON_STATUS_UNKNOWN;
+public:
+  CVisualizationVSXU() = default;
 
-  VIS_PROPS* visProps = (VIS_PROPS*) props;
-
-  if (!XBMC)
-    XBMC = new ADDON::CHelper_libXBMC_addon;
-
-  if (!XBMC->RegisterMe(hdl))
+  virtual ~CVisualizationVSXU()
   {
-    delete XBMC, XBMC=NULL;
-    return ADDON_STATUS_PERMANENT_FAILURE;
-  }
-
-  char path[1024];
-  XBMC->GetSetting("__addonpath__", path);
-  strcat(path,"/resources");
-
-  // create a new manager
-  manager = manager_factory();
-  manager->set_option_preload_all(false);
-
-  manager->init("/usr/share/vsxu", "media_player");
-  manager->add_visual_path(path);
-  g_presets = manager->get_visual_filenames();
-  // strip off dir names - if there are duped presets this will misbehave.
-  for (size_t i=0;i<g_presets.size();++i) {
-    size_t sit = g_presets[i].rfind('/');
-    size_t dit = g_presets[i].rfind('.');
-    g_presets[i] = g_presets[i].substr(sit+1,dit-sit-1);
-  }
-
-  vsx_gl_state::get_instance()->viewport_set(0,0,visProps->width,visProps->height);
-
-  return ADDON_STATUS_NEED_SETTINGS;
-}
-
-extern "C" void Start (int, int, int, const char*)
-{
-}
-
-extern "C" void AudioData (const float *pAudioData, int iAudioDataLength, float *pFreqData, int iFreqDataLength)
-{
-  manager->set_sound_wave(const_cast<float*>(pAudioData));
-  manager->set_sound_freq(const_cast<float*>(pFreqData));
-}
-
-extern "C" void Render()
-{
-  manager->render();
-}
-
-extern "C" void GetInfo (VIS_INFO* pInfo)
-{
-  pInfo->bWantsFreq = true;
-  pInfo->iSyncDelay = 0;
-}
-
-extern "C" bool OnAction (long flags, const void *param)
-{
-  if (flags == VIS_ACTION_LOAD_PRESET && param)
-  {
-    int index = *((int*)param);
-    manager->pick_visual(index);
-    return true;
-  }
-  else if (flags == VIS_ACTION_NEXT_PRESET)
-  {
-    manager->next_visual();
-    return true;
-  }
-  else if (flags == VIS_ACTION_PREV_PRESET)
-  {
-    manager->prev_visual();
-    return true;
-  }
-  else if (flags == VIS_ACTION_LOCK_PRESET)
-  {
-    manager->toggle_randomizer();
-    return true;
-  }
-  return false;
-}
-
-extern "C" unsigned int GetPresets (char ***presets)
-{
-  if (g_presets.size() > 0) {
-    *presets = new char*[g_presets.size()];
-    for (size_t i=0;i<g_presets.size();++i)
-      (*presets)[i] = strdup(g_presets[i].c_str());
-  }
-  return g_presets.size();
-}
-
-class FindSubString {
-  public:
-    FindSubString(const std::string& b) : m_b(b) {}
-
-    bool operator()(const std::string& a)
+    // stop vsxu nicely (unloads textures and frees memory)
+    if (m_manager)
     {
-      return m_b.find(a) != std::string::npos;
+      m_manager->stop();
+      manager_destroy(m_manager);
     }
 
-    std::string m_b;
+    m_manager = nullptr;
+  }
+
+  virtual bool Start(int channels, int samplesPerSec, int bitsPerSample,
+                     std::string songName) override
+  {
+    std::string path = kodi::GetAddonPath("resources");
+
+    // create a new manager
+    m_manager = manager_factory();
+    m_manager->set_option_preload_all(false);
+
+    m_manager->init("/usr/share/vsxu", "media_player");
+    m_manager->add_visual_path(path.c_str());
+    m_presets = m_manager->get_visual_filenames();
+    // strip off dir names - if there are duped presets this will misbehave.
+    for (size_t i=0;i<m_presets.size();++i) {
+      size_t sit = m_presets[i].rfind('/');
+      size_t dit = m_presets[i].rfind('.');
+      m_presets[i] = m_presets[i].substr(sit+1,dit-sit-1);
+    }
+
+    vsx_gl_state::get_instance()->viewport_set(0,0,Width(),Height());
+  }
+
+  virtual void Render() override
+  {
+    m_manager->render();
+  }
+
+  virtual void AudioData(const float* audioData, int audioDataLength,
+                         float *freqData, int freqDataLength) override
+  {
+    m_manager->set_sound_wave(const_cast<float*>(audioData));
+    m_manager->set_sound_freq(const_cast<float*>(freqData));
+  }
+
+  virtual void GetInfo(bool& wantsFreq, int& syncDelay) override
+  {
+    wantsFreq = true;
+    syncDelay = 0;
+  }
+
+  virtual bool GetPresets(std::vector<std::string>& presets) override
+  {
+    presets = m_presets;
+    return !presets.empty();
+  }
+
+  virtual int GetActivePreset()
+  {
+    std::string current = m_manager->get_meta_visual_filename();
+    auto it = std::find_if(m_presets.begin(),
+                           m_presets.end(),
+                           [current](const std::string& a)
+                           { return a.find(current) != std::string::npos;});
+
+    return it - m_presets.begin();
+  }
+
+  virtual bool PrevPreset() override
+  {
+    m_manager->prev_visual();
+    return true;
+  }
+
+  virtual bool NextPreset() override
+  {
+    m_manager->next_visual();
+    return true;
+  }
+
+  virtual bool LoadPreset(int select) override
+  {
+    m_manager->pick_visual(select);
+    return true;
+  }
+
+  virtual bool LockPreset(bool lockUnlock) override
+  {
+    m_manager->set_randomizer(lockUnlock);
+    return true;
+  }
+
+  virtual bool RandomPreset() override
+  {
+    m_manager->pick_random_visual();
+    return true;
+  }
+
+private:
+  vsx_manager_abs* m_manager = nullptr;
+  std::vector<std::string> m_presets;
 };
 
-extern "C" unsigned GetPreset()
-{
-  std::string current = manager->get_meta_visual_filename();
-
-  std::vector<std::string>::const_iterator it = std::find_if(g_presets.begin(),
-                                                             g_presets.end(),
-                                                             FindSubString(current+".vsx"));
-
-  return it-g_presets.begin();
-}
-
-extern "C" bool IsLocked()
-{
-  return false;
-}
-
-extern "C" unsigned int GetSubModules (char ***names)
-{
-  return 0;
-}
-
-extern "C" void ADDON_Stop()
-{
-  return;
-}
-
-extern "C" void ADDON_Destroy()
-{
-  // stop vsxu nicely (unloads textures and frees memory)
-  if (manager) manager->stop();
-
-  // call manager factory to destruct our manager object
-  if (manager) manager_destroy(manager);
-
-  manager = NULL;
-}
-
-extern "C" bool ADDON_HasSettings()
-{
-  return false;
-}
-
-extern "C" ADDON_STATUS ADDON_GetStatus()
-{
-  return ADDON_STATUS_OK;
-}
-
-extern "C" unsigned int ADDON_GetSettings (ADDON_StructSetting ***sSet)
-{
-  return 0;
-}
-
-extern "C" void ADDON_FreeSettings()
-{
-}
-
-extern "C" ADDON_STATUS ADDON_SetSetting (const char *strSetting, const void* value)
-{
-  return ADDON_STATUS_OK;
-}
-
-extern "C" void ADDON_Announce(const char *flag, const char *sender, const char *message, const void *data)
-{
-}
+ADDONCREATOR(CVisualizationVSXU) // Don't touch this!

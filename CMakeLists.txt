@@ -15,7 +15,7 @@ install(DIRECTORY  ${vsxu_path}/share/vsxu/visuals_faders
                    ${vsxu_path}/share/vsxu/visuals_player
        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/kodi/addons/visualization.vsxu/resources)
 
-include_directories(${KODI_INCLUDE_DIR}
+include_directories(${KODI_INCLUDE_DIR}/..
                     ${VSXU_INCLUDE_DIRS}
                     ${GLEW_INCLUDE_DIRS})
 
